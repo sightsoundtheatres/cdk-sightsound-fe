@@ -3,8 +3,8 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
 import * as acm from '@aws-cdk/aws-certificatemanager';
-import { LambdaEdgeEventType } from '@aws-cdk/aws-cloudfront';
 import * as lambdaFunction from '@aws-cdk/aws-lambda-nodejs'
+import * as lambda from '@aws-cdk/aws-lambda'
 import * as logs from '@aws-cdk/aws-logs'
 import { Runtime } from '@aws-cdk/aws-lambda';
 import * as path from 'path';
@@ -33,11 +33,11 @@ export interface FrontendConstructProps extends cdk.StackProps {
         removalPolicy: cdk.RemovalPolicy.DESTROY
       });
 
-      new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketname });
+      // new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketname });
   
       // TLS certificate
       const certificateArn = new acm.Certificate(this, 'SiteCertificate', {
-        domainname: props.domainname
+        domainName: props.domainname
       }).certificateArn;
       new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
   
@@ -56,15 +56,17 @@ export interface FrontendConstructProps extends cdk.StackProps {
             iam.ManagedPolicy.fromManagedPolicyArn(this,'awslambdaexecute','arn:aws:iam::aws:policy/AWSLambdaExecute')
         ]
     })
-      const cfHeadersLambda = new lambdaFunction.NodejsFunction(this, 'cfheaderslambda', {
-        runtime: Runtime.NODEJS_12_X,
-        entry: path.join(__dirname, 'lambda', 'index.js'),
-        handler: 'handler',
-        logRetention: logs.RetentionDays.FIVE_DAYS,
-        role:cfHeadersLambdaRole
-    })
 
-      const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+
+    const lambdaCode = new lambda.AssetCode('./lambda/')
+    const cfHeadersLambda = new lambda.Function(this, 'signInRedirectTarget', {
+      handler: 'handler',
+      code: lambdaCode,
+      runtime: lambda.Runtime.NODEJS_12_X,
+    })
+ 
+ 
+    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
         aliasConfiguration: {
           acmCertRef: certificateArn,
           names: [props.domainname],
@@ -87,14 +89,18 @@ export interface FrontendConstructProps extends cdk.StackProps {
           },
           behaviors: [
             {
-              isDefaultBehavior: true
+              isDefaultBehavior: true,
+              lambdaFunctionAssociations: [{
+                eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                lambdaFunction: cfHeadersLambda.currentVersion
+               }]
             },
             {
               pathPattern: 'index.html',
               ...noTtl,
               lambdaFunctionAssociations: [{
-                eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
-                lambdaFunction:''
+                eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                lambdaFunction: cfHeadersLambda.currentVersion
                }]
               
             },
