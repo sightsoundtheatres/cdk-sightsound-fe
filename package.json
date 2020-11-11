@@ -2,7 +2,7 @@
   "name": "cdk-sightsound-fe",
   "version": "1.0.0",
   "description": "Frontend construct for sight and sound apps",
-  "main": "stack.js",
+  "main": "stack.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc"
