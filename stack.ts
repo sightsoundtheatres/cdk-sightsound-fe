@@ -63,6 +63,7 @@ export interface FrontendConstructProps extends cdk.StackProps {
       handler: 'handler',
       code: lambdaCode,
       runtime: lambda.Runtime.NODEJS_12_X,
+      role:cfHeadersLambdaRole
     })
  
  
