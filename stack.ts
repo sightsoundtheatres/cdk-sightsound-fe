@@ -59,7 +59,7 @@ export interface FrontendConstructProps extends cdk.StackProps {
 
 
     const lambdaCode = new lambda.AssetCode('./lambda/')
-    const cfHeadersLambda = new lambda.Function(this, 'signInRedirectTarget', {
+    const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
       handler: 'handler',
       code: lambdaCode,
       runtime: lambda.Runtime.NODEJS_12_X,
