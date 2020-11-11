@@ -1,5 +1,5 @@
 {
-  "name": "cdk-sightsound-fe",
+  "name": "@sightsoundtheatres/cdk-sightsound-fe",
   "version": "1.0.0",
   "description": "Frontend construct for sight and sound apps",
   "main": "stack.ts",
