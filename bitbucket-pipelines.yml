@@ -11,7 +11,7 @@ pipelines:
             - node
           script:
             - npm ci
-            - npm build
+            - npm run-script tsc
             - pipe: atlassian/npm-publish:0.2.1  
               variables:
                 NPM_TOKEN: '$NPM_TOKEN'

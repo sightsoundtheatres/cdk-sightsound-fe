@@ -1,6 +1,6 @@
 {
   "name": "@sightsoundtheatres/cdk-sightsound-fe",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Frontend construct for sight and sound apps",
   "main": "stack.ts",
   "publishConfig": {
@@ -9,7 +9,7 @@
   "type":"module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "tsc": "tsc stack"
   },
   "author": "Sight & Sound",
   "license": "ISC",
