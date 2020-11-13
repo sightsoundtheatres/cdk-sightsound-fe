@@ -1,4 +1,4 @@
-image: sightsoundtheatres/node-chrome:latest
+image: node:lts-alpine
 
 options:
   max-time: 10
