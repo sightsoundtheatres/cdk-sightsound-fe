@@ -15,4 +15,5 @@ pipelines:
             - pipe: atlassian/npm-publish:0.2.1  
               variables:
                 NPM_TOKEN: '$NPM_TOKEN'
+                FOLDER: 'dist'
                 EXTRA_ARGS: '--access restricted'
