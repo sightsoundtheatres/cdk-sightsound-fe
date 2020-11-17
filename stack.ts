@@ -20,9 +20,9 @@ export interface FrontendConstructProps extends cdk.StackProps {
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
-export class FrontendConstruct extends cdk.Stack {
+export class FrontendConstruct extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: FrontendConstructProps) {
-    super(scope, id, props);
+    super(scope, id);
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
