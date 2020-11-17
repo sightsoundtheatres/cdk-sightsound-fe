@@ -6,6 +6,7 @@ import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as lambda from '@aws-cdk/aws-lambda'
 import * as iam from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs'
+import { Construct } from '@aws-cdk/core';
 
 
 export interface FrontendConstructProps extends cdk.StackProps {
@@ -20,9 +21,9 @@ export interface FrontendConstructProps extends cdk.StackProps {
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
-export class FrontendConstruct extends cdk.Construct {
-  constructor(scope: cdk.Construct, id: string, props: FrontendConstructProps) {
-    super(scope, id);
+export class FrontendConstruct extends Construct {
+  constructor(parent: Construct, id: string, props: FrontendConstructProps) {
+    super(parent, id);
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
