@@ -3,9 +3,11 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
 import * as acm from '@aws-cdk/aws-certificatemanager';
-import * as lambda from '@aws-cdk/aws-lambda'
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
-import * as logs from '@aws-cdk/aws-logs'
+import * as logs from '@aws-cdk/aws-logs';
+
+import * as path from 'path';
 
 export interface FrontendConstructProps extends cdk.StackProps {
   /**
@@ -50,7 +52,7 @@ export class FrontendConstruct extends cdk.Construct {
       ]
     });
 
-    const lambdaCode = new lambda.AssetCode('./lambda/')
+    const lambdaCode = new lambda.AssetCode(path.join(__dirname, 'lambda'));
     const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
       handler: 'handler',
       code: lambdaCode,
