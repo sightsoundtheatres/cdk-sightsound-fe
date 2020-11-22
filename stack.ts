@@ -4,7 +4,6 @@ import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
 import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as lambda from '@aws-cdk/aws-lambda';
-import * as iam from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 
 import * as path from 'path';
@@ -13,7 +12,7 @@ export interface FrontendConstructProps extends cdk.StackProps {
   /**
    * The domain name for the site to use
    */
-  readonly domainname: string;
+  readonly domainName: string;
   /**
    * Location of FE code to deploy
    */
@@ -33,7 +32,7 @@ export class FrontendConstruct extends cdk.Construct {
 
     // TLS certificate
     const certificateArn = new acm.Certificate(this, 'SiteCertificate', {
-      domainName: props.domainname
+      domainName: props.domainName
     }).certificateArn;
     new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
 
@@ -43,27 +42,17 @@ export class FrontendConstruct extends cdk.Construct {
       defaultTtl: cdk.Duration.seconds(0)
     };
 
-    //http headers function
-    const cfHeadersLambdaRole = new iam.Role(this, 'cfHeadersLambdaRole', {
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromManagedPolicyArn(this, 'dynamodb', 'arn:aws:iam::aws:policy/CloudFrontFullAccess'),
-        iam.ManagedPolicy.fromManagedPolicyArn(this, 'awslambdaexecute', 'arn:aws:iam::aws:policy/AWSLambdaExecute')
-      ]
-    });
-
     const lambdaCode = new lambda.AssetCode(path.join(__dirname, 'lambda'));
     const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
-      handler: 'handler',
+      handler: 'index.handler',
       code: lambdaCode,
       runtime: lambda.Runtime.NODEJS_12_X,
-      role: cfHeadersLambdaRole,
-      logRetention:logs.RetentionDays.FIVE_DAYS
+      logRetention: logs.RetentionDays.FIVE_DAYS
     });
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       aliasConfiguration: {
         acmCertRef: certificateArn,
-        names: [props.domainname],
+        names: [props.domainName],
         sslMethod: cloudfront.SSLMethod.SNI,
         securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018
       },
