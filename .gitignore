@@ -48,4 +48,5 @@ Thumbs.db
 *.wmv
 
 *.js
+!lambda/*.js
 *.d.ts
