@@ -5,14 +5,13 @@ import * as cloudfront from '@aws-cdk/aws-cloudfront';
 import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as logs from '@aws-cdk/aws-logs';
-
 import * as path from 'path';
 
 export interface FrontendConstructProps extends cdk.StackProps {
   /**
    * The domain name for the site to use
    */
-  readonly domainName: string;
+  readonly domainName?: string;
   /**
    * Location of FE code to deploy
    */
@@ -21,6 +20,8 @@ export interface FrontendConstructProps extends cdk.StackProps {
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends cdk.Construct {
+  private readonly certificate: acm.Certificate;
+
   constructor(parent: cdk.Construct, id: string, props: FrontendConstructProps) {
     super(parent, id);
 
@@ -30,11 +31,13 @@ export class FrontendConstruct extends cdk.Construct {
       removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
-    // TLS certificate
-    const certificateArn = new acm.Certificate(this, 'SiteCertificate', {
-      domainName: props.domainName
-    }).certificateArn;
-    new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
+    if (props.domainName) {
+      // TLS certificate
+      this.certificate = new acm.Certificate(this, 'SiteCertificate', {
+        domainName: props.domainName
+      });
+      new cdk.CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
+    }
 
     const noTtl = {
       minTtl: cdk.Duration.seconds(0),
@@ -43,19 +46,22 @@ export class FrontendConstruct extends cdk.Construct {
     };
 
     const lambdaCode = new lambda.AssetCode(path.join(__dirname, 'lambda'));
+
     const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
       handler: 'index.handler',
       code: lambdaCode,
       runtime: lambda.Runtime.NODEJS_12_X,
       logRetention: logs.RetentionDays.FIVE_DAYS
     });
+    
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      aliasConfiguration: {
-        acmCertRef: certificateArn,
+      //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
+      aliasConfiguration: props.domainName ? {
+        acmCertRef: this.certificate.certificateArn,
         names: [props.domainName],
         sslMethod: cloudfront.SSLMethod.SNI,
         securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018
-      },
+      } : undefined,
       errorConfigurations: [{
         errorCode: 403,
         responseCode: 200,
