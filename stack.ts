@@ -28,7 +28,8 @@ export class FrontendConstruct extends cdk.Construct {
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       websiteIndexDocument: 'index.html',
-      removalPolicy: cdk.RemovalPolicy.DESTROY
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      encryption:s3.BucketEncryption.S3_MANAGED
     });
 
     if (props.domainName) {
