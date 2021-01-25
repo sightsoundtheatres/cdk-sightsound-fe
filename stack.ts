@@ -16,6 +16,10 @@ export interface FrontendConstructProps extends cdk.StackProps {
    * Location of FE code to deploy
    */
   readonly deploymentSource: string;
+  /**
+   * SAN for the cert
+   */
+  readonly subjectAlternativeNames?: string[];
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
@@ -35,7 +39,8 @@ export class FrontendConstruct extends cdk.Construct {
     if (props.domainName) {
       // TLS certificate
       this.certificate = new acm.Certificate(this, 'SiteCertificate', {
-        domainName: props.domainName
+        domainName: props.domainName,
+        subjectAlternativeNames: props.subjectAlternativeNames
       });
       new cdk.CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
