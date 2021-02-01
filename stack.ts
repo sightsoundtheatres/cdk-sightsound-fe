@@ -33,7 +33,7 @@ export class FrontendConstruct extends cdk.Construct {
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       websiteIndexDocument: 'index.html',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      encryption:s3.BucketEncryption.S3_MANAGED
+      encryption: s3.BucketEncryption.S3_MANAGED
     });
 
     if (props.domainName) {
@@ -59,7 +59,7 @@ export class FrontendConstruct extends cdk.Construct {
       runtime: lambda.Runtime.NODEJS_12_X,
       logRetention: logs.RetentionDays.FIVE_DAYS
     });
-    
+
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
       aliasConfiguration: props.domainName ? {
