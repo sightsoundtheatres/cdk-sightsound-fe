@@ -40,7 +40,7 @@ export class FrontendConstruct extends cdk.Construct {
       // TLS certificate
       this.certificate = new acm.Certificate(this, 'SiteCertificate', {
         domainName: props.domainName,
-        subjectAlternativeNames: props.subjectAlternativeNames
+        subjectAlternativeNames: (props.subjectAlternativeNames) ? props.subjectAlternativeNames : undefined
       });
       new cdk.CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
