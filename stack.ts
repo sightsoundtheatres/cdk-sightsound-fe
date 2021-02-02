@@ -16,7 +16,7 @@ export interface FrontendConstructProps extends cdk.StackProps {
    * Location of FE code to deploy
    */
   readonly deploymentSource: string;
- }
+}
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends cdk.Construct {
@@ -57,7 +57,7 @@ export class FrontendConstruct extends cdk.Construct {
     });
 
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-            //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
+      //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
       aliasConfiguration: props.domainNames ? {
         acmCertRef: this.certificate.certificateArn,
         names: props.domainNames,
