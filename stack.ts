@@ -11,16 +11,12 @@ export interface FrontendConstructProps extends cdk.StackProps {
   /**
    * The domain name for the site to use
    */
-  readonly domainName?: string;
+  readonly domainNames?: string[];
   /**
    * Location of FE code to deploy
    */
   readonly deploymentSource: string;
-  /**
-   * SAN for the cert
-   */
-  readonly subjectAlternativeNames?: string[];
-}
+ }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends cdk.Construct {
@@ -36,11 +32,11 @@ export class FrontendConstruct extends cdk.Construct {
       encryption: s3.BucketEncryption.S3_MANAGED
     });
 
-    if (props.domainName) {
+    if (props.domainNames) {
       // TLS certificate
       this.certificate = new acm.Certificate(this, 'SiteCertificate', {
-        domainName: props.domainName,
-        subjectAlternativeNames: props.subjectAlternativeNames
+        domainName: props.domainNames[0],
+        subjectAlternativeNames: props.domainNames.slice(1)
       });
       new cdk.CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
@@ -61,10 +57,10 @@ export class FrontendConstruct extends cdk.Construct {
     });
 
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
-      aliasConfiguration: props.domainName ? {
+            //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
+      aliasConfiguration: props.domainNames ? {
         acmCertRef: this.certificate.certificateArn,
-        names: [props.domainName],
+        names: props.domainNames,
         sslMethod: cloudfront.SSLMethod.SNI,
         securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018
       } : undefined,
