@@ -6,6 +6,7 @@ import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as logs from '@aws-cdk/aws-logs';
 import * as path from 'path';
+import { PriceClass } from '@aws-cdk/aws-cloudfront';
 
 export interface FrontendConstructProps extends cdk.StackProps {
   /**
@@ -62,7 +63,7 @@ export class FrontendConstruct extends cdk.Construct {
         acmCertRef: this.certificate.certificateArn,
         names: props.domainNames,
         sslMethod: cloudfront.SSLMethod.SNI,
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019
       } : undefined,
       errorConfigurations: [{
         errorCode: 403,
@@ -103,7 +104,8 @@ export class FrontendConstruct extends cdk.Construct {
             ...noTtl
           },
         ],
-      }]
+      }],
+      priceClass: PriceClass.PRICE_CLASS_100,
     });
 
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
