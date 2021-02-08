@@ -7,6 +7,7 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as logs from '@aws-cdk/aws-logs';
 import * as path from 'path';
 
+
 export interface FrontendConstructProps extends cdk.StackProps {
   /**
    * The domain name for the site to use
@@ -62,7 +63,7 @@ export class FrontendConstruct extends cdk.Construct {
         acmCertRef: this.certificate.certificateArn,
         names: props.domainNames,
         sslMethod: cloudfront.SSLMethod.SNI,
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019
       } : undefined,
       errorConfigurations: [{
         errorCode: 403,
@@ -103,7 +104,8 @@ export class FrontendConstruct extends cdk.Construct {
             ...noTtl
           },
         ],
-      }]
+      }],
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
     });
 
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
