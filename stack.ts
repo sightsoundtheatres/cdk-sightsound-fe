@@ -6,7 +6,7 @@ import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as logs from '@aws-cdk/aws-logs';
 import * as path from 'path';
-import { PriceClass } from '@aws-cdk/aws-cloudfront';
+
 
 export interface FrontendConstructProps extends cdk.StackProps {
   /**
@@ -105,7 +105,7 @@ export class FrontendConstruct extends cdk.Construct {
           },
         ],
       }],
-      priceClass: PriceClass.PRICE_CLASS_100,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
     });
 
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
