@@ -111,13 +111,13 @@ export class FrontendConstruct extends cdk.Construct {
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
     new cdk.CfnOutput(this, 'DistributionDomainname', { value: distribution.distributionDomainName });
 
-    new s3deploy.BucketDeployment(this, 'Deployment', {
+    /*new s3deploy.BucketDeployment(this, 'Deployment', {
       sources: [s3deploy.Source.asset(props.deploymentSource)],
       destinationBucket: siteBucket,
       retainOnDelete: false,
       distribution,
       memoryLimit: 512
-    });
+    });*/
   }
 }
 
