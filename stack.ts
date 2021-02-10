@@ -114,7 +114,7 @@ export class FrontendConstruct extends cdk.Construct {
     new s3deploy.BucketDeployment(this, 'S3Deployment', {
       sources: [s3deploy.Source.asset(props.deploymentSource)],
       destinationBucket: siteBucket,
-      retainOnDelete: false,
+      retainOnDelete: true,
       distribution,
       memoryLimit: 1769 // one full vCPU
     });
