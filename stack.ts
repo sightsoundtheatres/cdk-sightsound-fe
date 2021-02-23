@@ -53,7 +53,7 @@ export class FrontendConstruct extends cdk.Construct {
     const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
       handler: 'index.handler',
       code: lambdaCode,
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: lambda.Runtime.NODEJS_14_X,
       logRetention: logs.RetentionDays.FIVE_DAYS
     });
 
