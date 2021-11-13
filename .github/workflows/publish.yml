@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Compile TypeScript code
+        run: npm run tsc
+
       - name: Publish cdk-sightsound-fe
         run: npm publish
         env:
