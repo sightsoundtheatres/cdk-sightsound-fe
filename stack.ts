@@ -17,6 +17,10 @@ export interface FrontendConstructProps extends cdk.StackProps {
    * Location of FE code to deploy
    */
   readonly deploymentSource: string;
+  /**
+   * Optional custom sources for CloudFront to proxy to
+   */
+  readonly customSources?: cloudfront.SourceConfiguration[];
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
@@ -104,9 +108,9 @@ export class FrontendConstruct extends cdk.Construct {
           {
             pathPattern: 'favicon.ico',
             ...noTtl
-          },
+          }
         ],
-      }],
+      }, ...(props.customSources ?? [])],
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
     });
 
