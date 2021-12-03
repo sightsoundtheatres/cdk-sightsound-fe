@@ -3,7 +3,7 @@ name: Publish cdk-sightsound-fe
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'package.json' # only push when version number changes
   workflow_dispatch:
