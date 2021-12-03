@@ -22,6 +22,7 @@ export interface FrontendConstructProps extends cdk.StackProps {
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends cdk.Construct {
   private readonly certificate: acm.Certificate;
+  public readonly distribution: cloudfront.CloudFrontWebDistribution;
 
   constructor(parent: cdk.Construct, id: string, props: FrontendConstructProps) {
     super(parent, id);
@@ -58,7 +59,7 @@ export class FrontendConstruct extends cdk.Construct {
       logRetention: logs.RetentionDays.FIVE_DAYS
     });
 
-    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+    this.distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
       aliasConfiguration: props.domainNames ? {
         acmCertRef: this.certificate.certificateArn,
@@ -109,14 +110,14 @@ export class FrontendConstruct extends cdk.Construct {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
     });
 
-    new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
-    new cdk.CfnOutput(this, 'DistributionDomainname', { value: distribution.distributionDomainName });
+    new cdk.CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
+    new cdk.CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
 
     new s3deploy.BucketDeployment(this, 'S3Deployment', {
       sources: [s3deploy.Source.asset(props.deploymentSource)],
       destinationBucket: siteBucket,
       retainOnDelete: true,
-      distribution,
+      distribution: this.distribution,
       memoryLimit: 1769 // one full vCPU
     });
   }
