@@ -1,14 +1,19 @@
-import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
-import * as cloudfront from '@aws-cdk/aws-cloudfront';
-import * as acm from '@aws-cdk/aws-certificatemanager';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
+import { Construct } from 'constructs';
+import {
+  CfnOutput,
+  Duration,
+  RemovalPolicy,
+  StackProps,
+  aws_certificatemanager as acm,
+  aws_cloudfront as cloudfront,
+  aws_lambda as lambda,
+  aws_logs as logs,
+  aws_s3 as s3,
+  aws_s3_deployment as s3deploy
+} from 'aws-cdk-lib';
 import * as path from 'path';
 
-
-export interface FrontendConstructProps extends cdk.StackProps {
+export interface FrontendConstructProps extends StackProps {
   /**
    * The domain name for the site to use
    */
@@ -24,17 +29,17 @@ export interface FrontendConstructProps extends cdk.StackProps {
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
-export class FrontendConstruct extends cdk.Construct {
+export class FrontendConstruct extends Construct {
   private readonly certificate: acm.Certificate;
   public readonly distribution: cloudfront.CloudFrontWebDistribution;
 
-  constructor(parent: cdk.Construct, id: string, props: FrontendConstructProps) {
+  constructor(parent: Construct, id: string, props: FrontendConstructProps) {
     super(parent, id);
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       websiteIndexDocument: 'index.html',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: RemovalPolicy.DESTROY,
       encryption: s3.BucketEncryption.S3_MANAGED
     });
 
@@ -44,13 +49,13 @@ export class FrontendConstruct extends cdk.Construct {
         domainName: props.domainNames[0],
         subjectAlternativeNames: props.domainNames.slice(1)
       });
-      new cdk.CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
+      new CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
 
     const noTtl = {
-      minTtl: cdk.Duration.seconds(0),
-      maxTtl: cdk.Duration.seconds(0),
-      defaultTtl: cdk.Duration.seconds(0)
+      minTtl: Duration.seconds(0),
+      maxTtl: Duration.seconds(0),
+      defaultTtl: Duration.seconds(0)
     };
 
     const lambdaCode = new lambda.AssetCode(path.join(__dirname, 'lambda'));
@@ -64,13 +69,11 @@ export class FrontendConstruct extends cdk.Construct {
     });
 
     this.distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      //update to https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-cloudfront.ViewerCertificate.html in future
-      aliasConfiguration: props.domainNames ? {
-        acmCertRef: this.certificate.certificateArn,
-        names: props.domainNames,
+      viewerCertificate: props.domainNames ? cloudfront.ViewerCertificate.fromAcmCertificate(this.certificate, {
+        aliases: props.domainNames,
         sslMethod: cloudfront.SSLMethod.SNI,
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019
-      } : undefined,
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+      }) : undefined,
       errorConfigurations: [{
         errorCode: 403,
         responseCode: 200,
@@ -114,8 +117,8 @@ export class FrontendConstruct extends cdk.Construct {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
     });
 
-    new cdk.CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
-    new cdk.CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
+    new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
+    new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
 
     new s3deploy.BucketDeployment(this, 'S3Deployment', {
       sources: [s3deploy.Source.asset(props.deploymentSource)],
