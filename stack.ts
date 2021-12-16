@@ -24,6 +24,10 @@ export interface FrontendConstructProps extends StackProps {
    * Optional custom sources for CloudFront to proxy to
    */
   readonly customBehaviors?: Record<string, cloudfront.BehaviorOptions>;
+  /**
+   * Override the CloudFront distribution ID for migration purposes
+   */
+  readonly distributionLocalIdOverride?: string;
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
@@ -86,7 +90,7 @@ export class FrontendConstruct extends Construct {
       cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED
     };
 
-    this.distribution = new cloudfront.Distribution(this, 'SiteCloudFrontDistribution', {
+    this.distribution = new cloudfront.Distribution(this, 'SiteDistribution', {
       domainNames: props.domainNames ? props.domainNames : undefined,
       certificate: props.domainNames ? this.certificate : undefined,
       errorResponses: [{
@@ -111,6 +115,12 @@ export class FrontendConstruct extends Construct {
         ...(props.customBehaviors ? props.customBehaviors : {})
       }
     });
+
+    // used for migration from CloudFrontWebDistribution to Distribution
+    // https://stackoverflow.com/a/68764093/5991792
+    if (props.distributionLocalIdOverride) {
+      (this.distribution.node.defaultChild as cloudfront.CfnDistribution).overrideLogicalId(props.distributionLocalIdOverride);
+    }
 
     new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
     new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
