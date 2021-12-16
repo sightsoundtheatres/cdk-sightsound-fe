@@ -40,7 +40,6 @@ export class FrontendConstruct extends Construct {
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      websiteIndexDocument: 'index.html',
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: s3.BucketEncryption.S3_MANAGED
     });
@@ -54,7 +53,7 @@ export class FrontendConstruct extends Construct {
       new CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
 
-    const origin = new cloudfrontOrigins.S3Origin(siteBucket, {});
+    const origin = new cloudfrontOrigins.S3Origin(siteBucket);
 
     const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'CloudFrontResponseHeaders', {
       securityHeadersBehavior: {
