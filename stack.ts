@@ -6,12 +6,10 @@ import {
   StackProps,
   aws_certificatemanager as acm,
   aws_cloudfront as cloudfront,
-  aws_lambda as lambda,
-  aws_logs as logs,
+  aws_cloudfront_origins as cloudfrontOrigins,
   aws_s3 as s3,
   aws_s3_deployment as s3deploy
 } from 'aws-cdk-lib';
-import * as path from 'path';
 
 export interface FrontendConstructProps extends StackProps {
   /**
@@ -25,13 +23,13 @@ export interface FrontendConstructProps extends StackProps {
   /**
    * Optional custom sources for CloudFront to proxy to
    */
-  readonly customSources?: cloudfront.SourceConfiguration[];
+  readonly customBehaviors?: Record<string, cloudfront.BehaviorOptions>;
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends Construct {
   private readonly certificate: acm.Certificate;
-  public readonly distribution: cloudfront.CloudFrontWebDistribution;
+  public readonly distribution: cloudfront.Distribution;
 
   constructor(parent: Construct, id: string, props: FrontendConstructProps) {
     super(parent, id);
@@ -52,69 +50,66 @@ export class FrontendConstruct extends Construct {
       new CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
     }
 
-    const noTtl = {
-      minTtl: Duration.seconds(0),
-      maxTtl: Duration.seconds(0),
-      defaultTtl: Duration.seconds(0)
-    };
+    const origin = new cloudfrontOrigins.S3Origin(siteBucket, {});
 
-    const lambdaCode = new lambda.AssetCode(path.join(__dirname, 'lambda'));
-
-    const cfHeadersLambda = new lambda.Function(this, 'cfHeadersfn', {
-      handler: 'index.handler',
-      description: '1.2.1',
-      code: lambdaCode,
-      runtime: lambda.Runtime.NODEJS_12_X,
-      logRetention: logs.RetentionDays.FIVE_DAYS
+    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'CloudFrontResponseHeaders', {
+      securityHeadersBehavior: {
+        strictTransportSecurity: {
+          accessControlMaxAge: Duration.days(365 * 2),
+          includeSubdomains: true,
+          preload: true,
+          override: true
+        },
+        contentTypeOptions: {
+          override: true
+        },
+        frameOptions: {
+          frameOption: cloudfront.HeadersFrameOption.SAMEORIGIN,
+          override: true
+        },
+        referrerPolicy: {
+          referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN,
+          override: true
+        }
+      }
     });
 
-    this.distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      viewerCertificate: props.domainNames ? cloudfront.ViewerCertificate.fromAcmCertificate(this.certificate, {
-        aliases: props.domainNames,
-        sslMethod: cloudfront.SSLMethod.SNI,
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-      }) : undefined,
-      errorConfigurations: [{
-        errorCode: 403,
-        responseCode: 200,
+    const defaultBehavior: cloudfront.BehaviorOptions = {
+      origin,
+      compress: true,
+      viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      responseHeadersPolicy
+    };
+
+    const noCacheBehavior: cloudfront.BehaviorOptions = {
+      ...defaultBehavior,
+      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED
+    };
+
+    this.distribution = new cloudfront.Distribution(this, 'SiteCloudFrontDistribution', {
+      domainNames: props.domainNames ? props.domainNames : undefined,
+      certificate: props.domainNames ? this.certificate : undefined,
+      errorResponses: [{
+        httpStatus: 403,
+        responseHttpStatus: 200,
         responsePagePath: '/index.html'
       }, {
-        errorCode: 404,
-        responseCode: 200,
+        httpStatus: 404,
+        responseHttpStatus: 200,
         responsePagePath: '/index.html'
       }],
-      originConfigs: [{
-        s3OriginSource: {
-          s3BucketSource: siteBucket,
-          originAccessIdentity: new cloudfront.OriginAccessIdentity(this, 'SiteOriginAccessIdentity')
-        },
-        behaviors: [
-          {
-            isDefaultBehavior: true,
-            lambdaFunctionAssociations: [{
-              eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-              lambdaFunction: cfHeadersLambda.currentVersion
-            }]
-          },
-          {
-            pathPattern: 'index.html',
-            ...noTtl,
-            lambdaFunctionAssociations: [{
-              eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-              lambdaFunction: cfHeadersLambda.currentVersion
-            }]
-          },
-          {
-            pathPattern: 'robots.txt',
-            ...noTtl
-          },
-          {
-            pathPattern: 'favicon.ico',
-            ...noTtl
-          }
-        ],
-      }, ...(props.customSources ?? [])],
+      defaultRootObject: 'index.html',
+      defaultBehavior,
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      enableIpv6: true,
+      httpVersion: cloudfront.HttpVersion.HTTP2,
+      minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+      additionalBehaviors: {
+        'index.html': noCacheBehavior,
+        'robots.txt': noCacheBehavior,
+        'favicon.ico': noCacheBehavior,
+        ...(props.customBehaviors ? props.customBehaviors : {})
+      }
     });
 
     new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
