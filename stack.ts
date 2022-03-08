@@ -66,6 +66,11 @@ export class FrontendConstruct extends Construct {
         contentTypeOptions: {
           override: true
         },
+        xssProtection:{
+          modeBlock:true,
+          override: true,
+          protection: true
+        },
         frameOptions: {
           frameOption: cloudfront.HeadersFrameOption.SAMEORIGIN,
           override: true
