@@ -35,5 +35,3 @@ jobs:
 
       - name: Publish cdk-sightsound-fe
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

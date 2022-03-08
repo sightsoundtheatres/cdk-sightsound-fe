@@ -3,15 +3,12 @@
   "version": "2.0.1",
   "description": "Frontend construct for sight and sound apps",
   "main": "stack.js",
-  "publishConfig": {
-    "access": "restricted"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc"
   },
   "author": "Sight & Sound",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "peerDependencies": {
     "aws-cdk-lib": "^2.0.0",
     "constructs": "^10.0.0"
