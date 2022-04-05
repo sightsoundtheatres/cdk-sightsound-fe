@@ -116,6 +116,7 @@ export class FrontendConstruct extends Construct {
         'index.html': noCacheBehavior,
         'robots.txt': noCacheBehavior,
         'favicon.ico': noCacheBehavior,
+        'config.json': noCacheBehavior,
         ...(props.customBehaviors ? props.customBehaviors : {})
       }
     });
