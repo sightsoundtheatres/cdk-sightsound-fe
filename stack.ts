@@ -25,6 +25,11 @@ export interface FrontendConstructProps extends StackProps {
    */
   readonly customBehaviors?: Record<string, cloudfront.BehaviorOptions>;
   /**
+   * Optional additional paths to files that should not be cached
+   * Includes index.html, robots.txt, favicon.ico, and config.json by default
+   */
+  readonly noCachePaths?: string[];
+  /**
    * Override the CloudFront distribution ID for migration purposes
    */
   readonly distributionLocalIdOverride?: string;
@@ -32,11 +37,20 @@ export interface FrontendConstructProps extends StackProps {
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
 export class FrontendConstruct extends Construct {
+  private readonly noCachePaths: string[];
   private readonly certificate: acm.Certificate;
   public readonly distribution: cloudfront.Distribution;
 
   constructor(parent: Construct, id: string, props: FrontendConstructProps) {
     super(parent, id);
+
+    this.noCachePaths = [
+      ...(props.noCachePaths ? props.noCachePaths : []),
+      'index.html',
+      'robots.txt',
+      'favicon.ico',
+      'config.json'
+    ];
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
@@ -113,10 +127,10 @@ export class FrontendConstruct extends Construct {
       httpVersion: cloudfront.HttpVersion.HTTP2,
       minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
       additionalBehaviors: {
-        'index.html': noCacheBehavior,
-        'robots.txt': noCacheBehavior,
-        'favicon.ico': noCacheBehavior,
-        'config.json': noCacheBehavior,
+        ...this.noCachePaths.reduce((obj, path) => {
+          obj[path] = noCacheBehavior;
+          return obj;
+        }, {} as Record<string, any>),
         ...(props.customBehaviors ? props.customBehaviors : {})
       }
     });
@@ -130,12 +144,38 @@ export class FrontendConstruct extends Construct {
     new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
     new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
 
+    // https://blog.kewah.com/2021/cdk-pattern-static-files-s3-cloudfront/
     new s3deploy.BucketDeployment(this, 'S3Deployment', {
-      sources: [s3deploy.Source.asset(props.deploymentSource)],
+      sources: [s3deploy.Source.asset(props.deploymentSource, {
+        exclude: this.noCachePaths
+      })],
       destinationBucket: siteBucket,
       retainOnDelete: true,
       distribution: this.distribution,
-      memoryLimit: 1769 // one full vCPU
+      memoryLimit: 1769, // one full vCPU
+      cacheControl: [
+        s3deploy.CacheControl.setPublic(),
+        s3deploy.CacheControl.maxAge(Duration.days(365)),
+        s3deploy.CacheControl.fromString('immutable')
+      ]
+    });
+
+    new s3deploy.BucketDeployment(this, 'S3DeploymentNoCache', {
+      sources: [s3deploy.Source.asset(props.deploymentSource, {
+        exclude: [
+          '*',
+          ...this.noCachePaths.map(path => `!${path}`)
+        ]
+      })],
+      destinationBucket: siteBucket,
+      retainOnDelete: true,
+      distribution: this.distribution,
+      memoryLimit: 1769, // one full vCPU
+      cacheControl: [
+        s3deploy.CacheControl.setPublic(),
+        s3deploy.CacheControl.maxAge(Duration.days(0)),
+        s3deploy.CacheControl.sMaxAge(Duration.days(0))
+      ]
     });
   }
 }
