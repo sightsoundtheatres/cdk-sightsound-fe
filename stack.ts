@@ -8,7 +8,8 @@ import {
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as cloudfrontOrigins,
   aws_s3 as s3,
-  aws_s3_deployment as s3deploy
+  aws_s3_deployment as s3deploy,
+  IgnoreMode
 } from 'aws-cdk-lib';
 
 export interface FrontendConstructProps extends StackProps {
@@ -165,7 +166,8 @@ export class FrontendConstruct extends Construct {
         exclude: [
           '*',
           ...this.noCachePaths.map(path => `!${path}`)
-        ]
+        ],
+        ignoreMode: IgnoreMode.GIT
       })],
       destinationBucket: siteBucket,
       retainOnDelete: true,
