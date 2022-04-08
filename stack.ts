@@ -8,8 +8,7 @@ import {
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as cloudfrontOrigins,
   aws_s3 as s3,
-  aws_s3_deployment as s3deploy,
-  IgnoreMode
+  aws_s3_deployment as s3deploy
 } from 'aws-cdk-lib';
 
 export interface FrontendConstructProps extends StackProps {
@@ -144,12 +143,12 @@ export class FrontendConstruct extends Construct {
 
     new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
     new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
-
+  
+    const s3Asset = s3deploy.Source.asset(props.deploymentSource);
+    
     // https://blog.kewah.com/2021/cdk-pattern-static-files-s3-cloudfront/
     const deployment = new s3deploy.BucketDeployment(this, 'S3Deployment', {
-      sources: [s3deploy.Source.asset(props.deploymentSource, {
-        exclude: this.noCachePaths
-      })],
+      sources: [s3Asset],
       destinationBucket: siteBucket,
       retainOnDelete: true,
       distribution: this.distribution,
@@ -162,18 +161,13 @@ export class FrontendConstruct extends Construct {
     });
 
     const noCacheDeployment = new s3deploy.BucketDeployment(this, 'S3DeploymentNoCache', {
-      sources: [s3deploy.Source.asset(props.deploymentSource, {
-        exclude: [
-          '*',
-          ...this.noCachePaths.map(path => `!${path}`)
-        ],
-        ignoreMode: IgnoreMode.GIT
-      })],
+      sources: [s3Asset],
       destinationBucket: siteBucket,
       retainOnDelete: true,
       distribution: this.distribution,
       memoryLimit: 1769, // one full vCPU
-      prune: false, // don't prune bucket since already deployed in last BucketDeployment
+      exclude: ['*'],
+      include: this.noCachePaths,
       cacheControl: [
         s3deploy.CacheControl.setPublic(),
         s3deploy.CacheControl.maxAge(Duration.days(0)),
