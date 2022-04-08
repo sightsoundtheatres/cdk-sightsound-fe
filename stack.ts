@@ -173,6 +173,7 @@ export class FrontendConstruct extends Construct {
       retainOnDelete: true,
       distribution: this.distribution,
       memoryLimit: 1769, // one full vCPU
+      prune: false, // don't prune bucket since already deployed in last BucketDeployment
       cacheControl: [
         s3deploy.CacheControl.setPublic(),
         s3deploy.CacheControl.maxAge(Duration.days(0)),
