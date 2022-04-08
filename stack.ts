@@ -153,6 +153,7 @@ export class FrontendConstruct extends Construct {
       retainOnDelete: true,
       distribution: this.distribution,
       memoryLimit: 1769, // one full vCPU
+      exclude: this.noCachePaths,
       cacheControl: [
         s3deploy.CacheControl.setPublic(),
         s3deploy.CacheControl.maxAge(Duration.days(365)),
