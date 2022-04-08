@@ -146,7 +146,7 @@ export class FrontendConstruct extends Construct {
     new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
 
     // https://blog.kewah.com/2021/cdk-pattern-static-files-s3-cloudfront/
-    new s3deploy.BucketDeployment(this, 'S3Deployment', {
+    const deployment = new s3deploy.BucketDeployment(this, 'S3Deployment', {
       sources: [s3deploy.Source.asset(props.deploymentSource, {
         exclude: this.noCachePaths
       })],
@@ -161,7 +161,7 @@ export class FrontendConstruct extends Construct {
       ]
     });
 
-    new s3deploy.BucketDeployment(this, 'S3DeploymentNoCache', {
+    const noCacheDeployment = new s3deploy.BucketDeployment(this, 'S3DeploymentNoCache', {
       sources: [s3deploy.Source.asset(props.deploymentSource, {
         exclude: [
           '*',
@@ -180,6 +180,8 @@ export class FrontendConstruct extends Construct {
         s3deploy.CacheControl.sMaxAge(Duration.days(0))
       ]
     });
+
+    noCacheDeployment.node.addDependency(deployment); // ensure deployment goes before noCacheDeployment so that bucket is pruned first
   }
 }
 
