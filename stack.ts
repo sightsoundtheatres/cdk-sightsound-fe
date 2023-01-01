@@ -8,7 +8,7 @@ import {
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as cloudfrontOrigins,
   aws_s3 as s3,
-  aws_s3_deployment as s3deploy
+  aws_s3_deployment as s3deploy,
 } from 'aws-cdk-lib';
 
 export interface FrontendConstructProps extends StackProps {
@@ -49,77 +49,87 @@ export class FrontendConstruct extends Construct {
       'index.html',
       'robots.txt',
       'favicon.ico',
-      'config.json'
+      'config.json',
     ];
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       removalPolicy: RemovalPolicy.DESTROY,
-      encryption: s3.BucketEncryption.S3_MANAGED
+      encryption: s3.BucketEncryption.S3_MANAGED,
     });
 
     if (props.domainNames) {
       // TLS certificate
       this.certificate = new acm.Certificate(this, 'SiteCertificate', {
         domainName: props.domainNames[0],
-        subjectAlternativeNames: props.domainNames.slice(1)
+        subjectAlternativeNames: props.domainNames.slice(1),
+        validation: acm.CertificateValidation.fromDns(),
       });
-      new CfnOutput(this, 'Certificate', { value: this.certificate.certificateArn });
+      new CfnOutput(this, 'Certificate', {
+        value: this.certificate.certificateArn,
+      });
     }
 
     const origin = new cloudfrontOrigins.S3Origin(siteBucket);
 
-    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'CloudFrontResponseHeaders', {
-      securityHeadersBehavior: {
-        strictTransportSecurity: {
-          accessControlMaxAge: Duration.days(365 * 2),
-          includeSubdomains: true,
-          preload: true,
-          override: true
+    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(
+      this,
+      'CloudFrontResponseHeaders',
+      {
+        securityHeadersBehavior: {
+          strictTransportSecurity: {
+            accessControlMaxAge: Duration.days(365 * 2),
+            includeSubdomains: true,
+            preload: true,
+            override: true,
+          },
+          contentTypeOptions: {
+            override: true,
+          },
+          xssProtection: {
+            modeBlock: true,
+            override: true,
+            protection: true,
+          },
+          frameOptions: {
+            frameOption: cloudfront.HeadersFrameOption.SAMEORIGIN,
+            override: true,
+          },
+          referrerPolicy: {
+            referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN,
+            override: true,
+          },
         },
-        contentTypeOptions: {
-          override: true
-        },
-        xssProtection:{
-          modeBlock:true,
-          override: true,
-          protection: true
-        },
-        frameOptions: {
-          frameOption: cloudfront.HeadersFrameOption.SAMEORIGIN,
-          override: true
-        },
-        referrerPolicy: {
-          referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN,
-          override: true
-        }
       }
-    });
+    );
 
     const defaultBehavior: cloudfront.BehaviorOptions = {
       origin,
       compress: true,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      responseHeadersPolicy
+      responseHeadersPolicy,
     };
 
     const noCacheBehavior: cloudfront.BehaviorOptions = {
       ...defaultBehavior,
-      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED
+      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
     };
 
     this.distribution = new cloudfront.Distribution(this, 'SiteDistribution', {
       domainNames: props.domainNames ? props.domainNames : undefined,
       certificate: props.domainNames ? this.certificate : undefined,
-      errorResponses: [{
-        httpStatus: 403,
-        responseHttpStatus: 200,
-        responsePagePath: '/index.html'
-      }, {
-        httpStatus: 404,
-        responseHttpStatus: 200,
-        responsePagePath: '/index.html'
-      }],
+      errorResponses: [
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+      ],
       defaultRootObject: 'index.html',
       defaultBehavior,
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
@@ -131,21 +141,27 @@ export class FrontendConstruct extends Construct {
           obj[path] = noCacheBehavior;
           return obj;
         }, {} as Record<string, any>),
-        ...(props.customBehaviors ? props.customBehaviors : {})
-      }
+        ...(props.customBehaviors ? props.customBehaviors : {}),
+      },
     });
 
     // used for migration from CloudFrontWebDistribution to Distribution
     // https://stackoverflow.com/a/68764093/5991792
     if (props.distributionLocalIdOverride) {
-      (this.distribution.node.defaultChild as cloudfront.CfnDistribution).overrideLogicalId(props.distributionLocalIdOverride);
+      (
+        this.distribution.node.defaultChild as cloudfront.CfnDistribution
+      ).overrideLogicalId(props.distributionLocalIdOverride);
     }
 
-    new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
-    new CfnOutput(this, 'DistributionDomainname', { value: this.distribution.distributionDomainName });
-  
+    new CfnOutput(this, 'DistributionId', {
+      value: this.distribution.distributionId,
+    });
+    new CfnOutput(this, 'DistributionDomainname', {
+      value: this.distribution.distributionDomainName,
+    });
+
     const s3Asset = s3deploy.Source.asset(props.deploymentSource);
-    
+
     // https://blog.kewah.com/2021/cdk-pattern-static-files-s3-cloudfront/
     const deployment = new s3deploy.BucketDeployment(this, 'S3Deployment', {
       sources: [s3Asset],
@@ -157,26 +173,29 @@ export class FrontendConstruct extends Construct {
       cacheControl: [
         s3deploy.CacheControl.setPublic(),
         s3deploy.CacheControl.maxAge(Duration.days(365)),
-        s3deploy.CacheControl.fromString('immutable')
-      ]
+        s3deploy.CacheControl.fromString('immutable'),
+      ],
     });
 
-    const noCacheDeployment = new s3deploy.BucketDeployment(this, 'S3DeploymentNoCache', {
-      sources: [s3Asset],
-      destinationBucket: siteBucket,
-      retainOnDelete: true,
-      distribution: this.distribution,
-      memoryLimit: 1769, // one full vCPU
-      exclude: ['*'],
-      include: this.noCachePaths,
-      cacheControl: [
-        s3deploy.CacheControl.setPublic(),
-        s3deploy.CacheControl.maxAge(Duration.days(0)),
-        s3deploy.CacheControl.sMaxAge(Duration.days(0))
-      ]
-    });
+    const noCacheDeployment = new s3deploy.BucketDeployment(
+      this,
+      'S3DeploymentNoCache',
+      {
+        sources: [s3Asset],
+        destinationBucket: siteBucket,
+        retainOnDelete: true,
+        distribution: this.distribution,
+        memoryLimit: 1769, // one full vCPU
+        exclude: ['*'],
+        include: this.noCachePaths,
+        cacheControl: [
+          s3deploy.CacheControl.setPublic(),
+          s3deploy.CacheControl.maxAge(Duration.days(0)),
+          s3deploy.CacheControl.sMaxAge(Duration.days(0)),
+        ],
+      }
+    );
 
     noCacheDeployment.node.addDependency(deployment); // ensure deployment goes before noCacheDeployment so that bucket is pruned first
   }
 }
-
