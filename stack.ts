@@ -50,7 +50,6 @@ export class FrontendConstruct extends Construct {
       'robots.txt',
       'favicon.ico',
       'config.json',
-      '/',
     ];
 
     // Content bucket
@@ -168,7 +167,8 @@ export class FrontendConstruct extends Construct {
       sources: [s3Asset],
       destinationBucket: siteBucket,
       retainOnDelete: true,
-      distribution: this.distribution,
+      // remove from this deployment since we do it below, so as to not run two invalidations at once
+      // distribution: this.distribution,
       memoryLimit: 1769, // one full vCPU
       exclude: this.noCachePaths,
       cacheControl: [
