@@ -167,7 +167,7 @@ export class FrontendConstruct extends Construct {
       sources: [s3Asset],
       destinationBucket: siteBucket,
       retainOnDelete: true,
-      distribution: this.distribution,
+      //distribution: this.distribution,
       memoryLimit: 1769, // one full vCPU
       exclude: this.noCachePaths,
       cacheControl: [
@@ -184,7 +184,7 @@ export class FrontendConstruct extends Construct {
         sources: [s3Asset],
         destinationBucket: siteBucket,
         retainOnDelete: true,
-        distribution: this.distribution,
+        //distribution: this.distribution,
         memoryLimit: 1769, // one full vCPU
         exclude: ['*'],
         include: this.noCachePaths,
