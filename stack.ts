@@ -56,6 +56,7 @@ export class FrontendConstruct extends Construct {
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     });
 
     if (props.domainNames) {
