@@ -50,6 +50,7 @@ export class FrontendConstruct extends Construct {
       'robots.txt',
       'favicon.ico',
       'config.json',
+      'ngsw.json'
     ];
 
     // Content bucket
