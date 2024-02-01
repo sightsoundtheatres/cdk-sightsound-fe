@@ -50,7 +50,7 @@ export class FrontendConstruct extends Construct {
       'robots.txt',
       'favicon.ico',
       'config.json',
-      'ngsw.json'
+      'ngsw.json',
     ];
 
     // Content bucket
@@ -195,6 +195,9 @@ export class FrontendConstruct extends Construct {
           s3deploy.CacheControl.setPublic(),
           s3deploy.CacheControl.maxAge(Duration.days(0)),
           s3deploy.CacheControl.sMaxAge(Duration.days(0)),
+          s3deploy.CacheControl.fromString('must-revalidate'),
+          s3deploy.CacheControl.fromString('proxy-revalidate'),
+          s3deploy.CacheControl.fromString('no-store'),
         ],
       }
     );
