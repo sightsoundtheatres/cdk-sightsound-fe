@@ -58,6 +58,17 @@ export class FrontendConstruct extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      versioned: true,
+      intelligentTieringConfigurations: [{
+        name: 'auto-tier-non-current-site-assets',
+        archiveAccessTierTime: Duration.days(90),
+        deepArchiveAccessTierTime: Duration.days(180),
+      }],
+      lifecycleRules: [{
+        id: 'delete-old-versions',
+        expiration: Duration.days(2555),
+        noncurrentVersionsToRetain: 6
+      }]
     });
 
     if (props.domainNames) {
@@ -178,6 +189,7 @@ export class FrontendConstruct extends Construct {
         s3deploy.CacheControl.maxAge(Duration.days(365)),
         s3deploy.CacheControl.fromString('immutable'),
       ],
+      prune: false,
     });
 
     const noCacheDeployment = new s3deploy.BucketDeployment(
