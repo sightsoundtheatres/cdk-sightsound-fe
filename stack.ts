@@ -59,16 +59,20 @@ export class FrontendConstruct extends Construct {
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       versioned: true,
-      intelligentTieringConfigurations: [{
-        name: 'auto-tier-non-current-site-assets',
-        archiveAccessTierTime: Duration.days(90),
-        deepArchiveAccessTierTime: Duration.days(180),
-      }],
-      lifecycleRules: [{
-        id: 'delete-old-versions',
-        expiration: Duration.days(2555),
-        noncurrentVersionsToRetain: 6
-      }]
+      intelligentTieringConfigurations: [
+        {
+          name: 'auto-tier-non-current-site-assets',
+          archiveAccessTierTime: Duration.days(90),
+          deepArchiveAccessTierTime: Duration.days(180),
+        },
+      ],
+      lifecycleRules: [
+        {
+          id: 'delete-old-versions',
+          expiration: Duration.days(2555),
+          noncurrentVersionsToRetain: 6,
+        },
+      ],
     });
 
     if (props.domainNames) {
@@ -147,7 +151,7 @@ export class FrontendConstruct extends Construct {
       defaultBehavior,
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       enableIpv6: true,
-      httpVersion: cloudfront.HttpVersion.HTTP2,
+      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
       minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
       additionalBehaviors: {
         ...this.noCachePaths.reduce((obj, path) => {
