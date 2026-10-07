@@ -33,6 +33,15 @@ export interface FrontendConstructProps extends StackProps {
    * Override the CloudFront distribution ID for migration purposes
    */
   readonly distributionLocalIdOverride?: string;
+  /**
+   * Send `X-Robots-Tag: noindex, nofollow` on every response so search engines
+   * drop the site from results. For internal apps only.
+   *
+   * This only works if crawlers can fetch pages: the app's robots.txt must NOT
+   * disallow them, or the header is never seen and URLs stay indexed from
+   * external links.
+   */
+  readonly noIndex?: boolean;
 }
 
 // some code taken from https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/static-site/static-site.ts
@@ -117,6 +126,18 @@ export class FrontendConstruct extends Construct {
             override: true,
           },
         },
+        customHeadersBehavior: props.noIndex
+          ? {
+              customHeaders: [
+                {
+                  // https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag#xrobotstag
+                  header: 'X-Robots-Tag',
+                  value: 'noindex, nofollow',
+                  override: true,
+                },
+              ],
+            }
+          : undefined,
       }
     );
 
